@@ -99,16 +99,56 @@ function Itinerary({ itinerary, loading }) {
       </div>
     );
   }
+
   if (!itinerary) return null;
+
+  const lines = itinerary.split('\n');
+
   return (
-    <div className="py-16 px-8 bg-white max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">🗺️ Your AI Generated Itinerary</h2>
-      <div className="bg-gray-50 rounded-2xl p-8 whitespace-pre-wrap text-gray-700 text-lg leading-relaxed shadow-inner">
-        {itinerary}
+    <div className="py-16 px-8 bg-gray-50">
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
+        🗺️ Your AI Generated Itinerary
+      </h2>
+      <div className="max-w-4xl mx-auto">
+        {lines.map((line, index) => {
+          if (line.startsWith('## ')) {
+            return <h2 key={index} className="text-2xl font-bold text-blue-600 mt-8 mb-4">{line.replace('## ', '')}</h2>;
+          } if (line.startsWith('#### ')) {
+           return <p key={index} className="font-semibold text-gray-700 mt-4 mb-2">{line.replace('#### ', '')}</p>;
+           } else if (line.startsWith('### ')) {
+            return <h3 key={index} className="text-xl font-bold text-gray-800 mt-6 mb-3 border-l-4 border-blue-500 pl-4">{line.replace('### ', '')}</h3>;
+          } else if (line.startsWith('**')) {
+            return <p key={index} className="font-bold text-gray-800 mt-4 mb-2">{line.replace(/\*\*/g, '')}</p>;
+          } else if (line.startsWith('*   ')) {
+            return (
+              <div key={index} className="flex gap-3 mb-2 ml-4">
+                <span className="text-blue-500 mt-1">•</span>
+                <p className="text-gray-600">{line.replace('*   ', '')}</p>
+              </div>
+            );
+          } else if (line.startsWith('---')) {
+            return <hr key={index} className="my-6 border-gray-200" />;
+          } else if (line.trim() === '') {
+            return <div key={index} className="mb-2" />;
+          } else {
+            return <p key={index} className="text-gray-600 mb-2">{line}</p>;
+          }
+        })}
+
+        {/* Export Button */}
+        <div className="text-center mt-10">
+          <button
+            onClick={() => window.print()}
+            className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-blue-700"
+          >
+            🖨️ Print / Save as PDF
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
 
 function Footer() {
   return (
@@ -141,12 +181,18 @@ function App() {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_KEY);
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const prompt = `Create a detailed ${days} day travel itinerary for ${destination}, India. 
-      For each day include:
-      - Morning, afternoon and evening activities
-      - Local food recommendations
-      - Travel tips
-      Format it nicely with Day 1, Day 2 etc.`;
+      const prompt = `
+       Create a ${days}-day itinerary for ${destination}, India.
+       For each day provide:
+        Day Number
+        Morning Activity
+        Afternoon Activity
+        Evening Activity
+        Food Recommendation
+        Travel Tip
+
+Keep each point under 30 words.
+`;
       const result = await model.generateContent(prompt);
       const text = result.response.text();
       setItinerary(text);
