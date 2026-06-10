@@ -3,9 +3,7 @@ import React, { useState } from 'react';
 function Navbar() {
   return (
     <nav className="flex justify-between items-center px-8 py-4 bg-blue-600 shadow-md">
-      <div className="text-2xl font-bold text-white">
-        🗺️ YatrAI
-      </div>
+      <div className="text-2xl font-bold text-white">🗺️ YatrAI</div>
       <div className="flex gap-8 text-white font-medium">
         <span className="cursor-pointer hover:text-blue-200">Home</span>
         <span className="cursor-pointer hover:text-blue-200">Explore</span>
@@ -18,38 +16,13 @@ function Navbar() {
   );
 }
 
-function Footer() {
-  return (
-    <div className="bg-blue-600 text-white py-10 px-8 text-center">
-      <div className="text-3xl font-bold mb-2">
-        🗺️ YatrAI
-      </div>
-      <p className="text-blue-100 mb-4">
-        Made with ❤️ for India
-      </p>
-      <div className="flex justify-center gap-8 text-blue-200 mb-6">
-        <span className="cursor-pointer hover:text-white">Home</span>
-        <span className="cursor-pointer hover:text-white">Explore</span>
-        <span className="cursor-pointer hover:text-white">My Trips</span>
-        <span className="cursor-pointer hover:text-white">Contact</span>
-      </div>
-      <p className="text-blue-300 text-sm">
-        © 2024 YatrAI. All rights reserved.
-      </p>
-    </div>
-  );
-}
-
-function Hero() {
+function Hero({ onGenerate }) {
   const [destination, setDestination] = useState('');
+  const [days, setDays] = useState('3');
   return (
     <div className="bg-gradient-to-b from-blue-600 to-blue-400 text-white py-20 px-8 text-center">
-      <h1 className="text-5xl font-bold mb-4">
-        🇮🇳 Plan Your Perfect India Trip
-      </h1>
-      <p className="text-xl mb-10 text-blue-100">
-        Enter a destination and let AI build your day by day itinerary
-      </p>
+      <h1 className="text-5xl font-bold mb-4">🇮🇳 Plan Your Perfect India Trip</h1>
+      <p className="text-xl mb-10 text-blue-100">Enter a destination and let AI build your day by day itinerary</p>
       <div className="flex justify-center gap-4 max-w-2xl mx-auto">
         <input
           type="text"
@@ -58,7 +31,20 @@ function Hero() {
           onChange={(e) => setDestination(e.target.value)}
           className="flex-1 px-6 py-4 rounded-full text-gray-800 text-lg outline-none"
         />
-        <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full text-lg font-bold">
+        <select
+          value={days}
+          onChange={(e) => setDays(e.target.value)}
+          className="px-4 py-4 rounded-full text-gray-800 text-lg outline-none"
+        >
+          <option value="2">2 Days</option>
+          <option value="3">3 Days</option>
+          <option value="4">4 Days</option>
+          <option value="5">5 Days</option>
+        </select>
+        <button
+          onClick={() => onGenerate(destination, days)}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full text-lg font-bold"
+        >
           Generate 🚀
         </button>
       </div>
@@ -82,31 +68,19 @@ function DestinationCards() {
     { emoji: '🕌', name: 'Delhi', desc: 'History & street food', days: '2-3 days', color: 'bg-red-100' },
     { emoji: '🌅', name: 'Varanasi', desc: 'Spirituality & culture', days: '2-3 days', color: 'bg-yellow-100' },
   ];
-
   return (
     <div className="py-16 px-8 bg-gray-50">
-      <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">
-        Popular Destinations 🇮🇳
-      </h2>
-      <p className="text-center text-gray-500 mb-10">
-        Explore the most loved places across India
-      </p>
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">Popular Destinations 🇮🇳</h2>
+      <p className="text-center text-gray-500 mb-10">Explore the most loved places across India</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {destinations.map((dest) => (
-          <div
-            key={dest.name}
-            className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl transition-shadow"
-          >
-            <div className={`${dest.color} rounded-xl p-4 text-5xl text-center mb-4`}>
-              {dest.emoji}
-            </div>
+          <div key={dest.name} className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl transition-shadow">
+            <div className={`${dest.color} rounded-xl p-4 text-5xl text-center mb-4`}>{dest.emoji}</div>
             <h3 className="text-xl font-bold text-gray-800 mb-1">{dest.name}</h3>
             <p className="text-gray-500 text-sm mb-3">{dest.desc}</p>
             <div className="flex justify-between items-center">
               <span className="text-blue-600 font-medium text-sm">📅 {dest.days}</span>
-              <button className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-700">
-                Plan Trip
-              </button>
+              <button className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-700">Plan Trip</button>
             </div>
           </div>
         ))}
@@ -115,11 +89,79 @@ function DestinationCards() {
   );
 }
 
+function Itinerary({ itinerary, loading }) {
+  if (loading) {
+    return (
+      <div className="py-20 text-center">
+        <div className="text-6xl mb-4">🤖</div>
+        <h2 className="text-2xl font-bold text-gray-700">AI is building your itinerary...</h2>
+        <p className="text-gray-500 mt-2">This will take a few seconds!</p>
+      </div>
+    );
+  }
+  if (!itinerary) return null;
+  return (
+    <div className="py-16 px-8 bg-white max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">🗺️ Your AI Generated Itinerary</h2>
+      <div className="bg-gray-50 rounded-2xl p-8 whitespace-pre-wrap text-gray-700 text-lg leading-relaxed shadow-inner">
+        {itinerary}
+      </div>
+    </div>
+  );
+}
+
+function Footer() {
+  return (
+    <div className="bg-blue-600 text-white py-10 px-8 text-center">
+      <div className="text-3xl font-bold mb-2">🗺️ YatrAI</div>
+      <p className="text-blue-100 mb-4">Made with ❤️ for India</p>
+      <div className="flex justify-center gap-8 text-blue-200 mb-6">
+        <span className="cursor-pointer hover:text-white">Home</span>
+        <span className="cursor-pointer hover:text-white">Explore</span>
+        <span className="cursor-pointer hover:text-white">My Trips</span>
+        <span className="cursor-pointer hover:text-white">Contact</span>
+      </div>
+      <p className="text-blue-300 text-sm">© 2024 YatrAI. All rights reserved.</p>
+    </div>
+  );
+}
+
 function App() {
+  const [itinerary, setItinerary] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const generateItinerary = async (destination, days) => {
+    if (!destination) {
+      alert('Please enter a destination!');
+      return;
+    }
+    setLoading(true);
+    setItinerary('');
+    try {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_KEY);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const prompt = `Create a detailed ${days} day travel itinerary for ${destination}, India. 
+      For each day include:
+      - Morning, afternoon and evening activities
+      - Local food recommendations
+      - Travel tips
+      Format it nicely with Day 1, Day 2 etc.`;
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      setItinerary(text);
+    } catch (error) {
+      alert('Something went wrong! ' + error.message);
+      console.error(error);
+    }
+    setLoading(false);
+  };
+
   return (
     <div>
       <Navbar />
-      <Hero />
+      <Hero onGenerate={generateItinerary} />
+      <Itinerary itinerary={itinerary} loading={loading} />
       <DestinationCards />
       <Footer />
     </div>
