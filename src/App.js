@@ -1,20 +1,48 @@
-import React, { useState } from 'react';
-import Login from "./components/Login";
+import React, { useState, useEffect } from 'react';
+import { auth, provider, db } from './firebase';
+import { signInWithPopup, signOut } from 'firebase/auth';
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 
 
 
-function Navbar() {
+
+function Navbar({ user, onLogin, onLogout, onShowTrips }) {
   return (
     <nav className="flex justify-between items-center px-8 py-4 bg-blue-600 shadow-md">
       <div className="text-2xl font-bold text-white">🗺️ YatrAI</div>
       <div className="flex gap-8 text-white font-medium">
         <span className="cursor-pointer hover:text-blue-200">Home</span>
         <span className="cursor-pointer hover:text-blue-200">Explore</span>
-        <span className="cursor-pointer hover:text-blue-200">My Trips</span>
+        {user && (
+          <span
+            onClick={onShowTrips}
+            className="cursor-pointer hover:text-blue-200">
+            My Trips
+          </span>
+        )}
       </div>
-      <button className="bg-white text-blue-600 px-6 py-2 rounded-full hover:bg-blue-100">
-        Login
-      </button>
+      {user ? (
+        <div className="flex items-center gap-4">
+          <img
+            src={user.photoURL}
+            alt="profile"
+            className="w-8 h-8 rounded-full"
+          />
+          <span className="text-white text-sm">{user.displayName}</span>
+          <button
+            onClick={onLogout}
+            className="bg-white text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 text-sm">
+            Logout
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={onLogin}
+          className="bg-white text-blue-600 px-6 py-2 rounded-full hover:bg-blue-100 flex items-center gap-2">
+          <img src="https://www.google.com/favicon.ico" alt="google" className="w-4 h-4" />
+          Login with Google
+        </button>
+      )}
     </nav>
   );
 }
@@ -100,7 +128,7 @@ function DestinationCards({ onCardClick }) {
   );
 }
 
-function Itinerary({ itinerary, loading }) {
+function Itinerary({ itinerary, loading , onSave , user }) {
   if (loading) {
     return (
       <div className="py-20 text-center">
@@ -147,14 +175,23 @@ function Itinerary({ itinerary, loading }) {
         })}
 
         {/* Export Button */}
-        <div className="text-center mt-10">
-          <button
-            onClick={() => window.print()}
-            className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-blue-700"
-          >
-            🖨️ Print / Save as PDF
-          </button>
-        </div>
+        {/* Buttons */}
+<div className="text-center mt-10 flex justify-center gap-4">
+  <button
+    onClick={() => window.print()}
+    className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-blue-700"
+  >
+    🖨️ Print / Save as PDF
+  </button>
+  {user && (
+    <button
+      onClick={onSave}
+      className="bg-green-500 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-green-600"
+    >
+      💾 Save Trip
+    </button>
+  )}
+</div>
       </div>
     </div>
   );
@@ -179,35 +216,82 @@ function Footer() {
 function App() {
   const [itinerary, setItinerary] = useState('');
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [savedTrips, setSavedTrips] = useState([]);
+  const [showTrips, setShowTrips] = useState(false);
+  const [lastDestination, setLastDestination] = useState('');
+
+  useEffect(() => {
+    auth.onAuthStateChanged((u) => setUser(u));
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      alert('Login failed! ' + error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setShowTrips(false);
+  };
+
+  const saveTrip = async () => {
+    if (!user) {
+      alert('Please login to save trips!');
+      return;
+    }
+    try {
+      await addDoc(collection(db, 'trips'), {
+        userId: user.uid,
+        destination: lastDestination,
+        itinerary: itinerary,
+        createdAt: new Date()
+      });
+      alert('Trip saved successfully! ✅');
+    } catch (error) {
+      alert('Failed to save trip! ' + error.message);
+    }
+  };
+
+  const loadSavedTrips = async () => {
+    if (!user) return;
+    const q = query(collection(db, 'trips'), where('userId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const trips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setSavedTrips(trips);
+    setShowTrips(true);
+  };
 
   const generateItinerary = async (destination, days) => {
-  if (!destination) {
-    alert('Please enter a destination!');
-    return;
-  }
-  setLoading(true);
-  setItinerary('');
-  window.scrollTo({ top: 400, behavior: 'smooth' });
-  try {
-    const response = await fetch('http://localhost:5000/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ destination, days }),
-    });
-    const data = await response.json();
-    if (data.error) {
-      alert('Something went wrong! ' + data.error);
-    } else {
-      setItinerary(data.itinerary);
+    if (!destination) {
+      alert('Please enter a destination!');
+      return;
     }
-  } catch (error) {
-    alert('Something went wrong! ' + error.message);
-    console.error(error);
-  }
-  setLoading(false);
-};
+    setLastDestination(destination);
+    setLoading(true);
+    setItinerary('');
+    setShowTrips(false);
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+    try {
+      const response = await fetch('https://yatr-ai-backend.onrender.com/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destination, days }),
+      });
+      const data = await response.json();
+      if (data.error) {
+        alert('Something went wrong! ' + data.error);
+      } else {
+        setItinerary(data.itinerary);
+      }
+    } catch (error) {
+      alert('Something went wrong! ' + error.message);
+    }
+    setLoading(false);
+  };
 
   const handleCardClick = (destinationName) => {
     generateItinerary(destinationName, '3');
@@ -215,12 +299,46 @@ function App() {
 
   return (
     <div>
-      <Navbar />
+      <Navbar
+        user={user}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        onShowTrips={loadSavedTrips}
+      />
       <Hero onGenerate={generateItinerary} />
-      <Itinerary itinerary={itinerary} loading={loading} />
+
+      {showTrips && (
+        <div className="py-16 px-8 bg-white max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
+            🗺️ My Saved Trips
+          </h2>
+          {savedTrips.length === 0 ? (
+            <p className="text-center text-gray-500">No saved trips yet!</p>
+          ) : (
+            savedTrips.map(trip => (
+              <div
+                key={trip.id}
+                onClick={() => { setItinerary(trip.itinerary); setShowTrips(false); }}
+                className="bg-gray-50 rounded-2xl p-6 mb-4 cursor-pointer hover:shadow-md"
+              >
+                <h3 className="text-xl font-bold text-blue-600">{trip.destination}</h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  {trip.createdAt?.toDate?.()?.toLocaleDateString() || 'Saved trip'}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <Itinerary
+        itinerary={itinerary}
+        loading={loading}
+        onSave={saveTrip}
+        user={user}
+      />
       <DestinationCards onCardClick={handleCardClick} />
       <Footer />
-      <Login />
     </div>
   );
 }
