@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import Login from "./components/Login";
+
+
 
 function Navbar() {
   return (
@@ -36,10 +39,12 @@ function Hero({ onGenerate }) {
           onChange={(e) => setDays(e.target.value)}
           className="px-4 py-4 rounded-full text-gray-800 text-lg outline-none"
         >
+          <option value="1">1 Days</option>
           <option value="2">2 Days</option>
           <option value="3">3 Days</option>
           <option value="4">4 Days</option>
           <option value="5">5 Days</option>
+          <option value="6">6 Days</option>
         </select>
         <button
           onClick={() => onGenerate(destination, days)}
@@ -59,7 +64,7 @@ function Hero({ onGenerate }) {
   );
 }
 
-function DestinationCards() {
+function DestinationCards({ onCardClick }) {
   const destinations = [
     { emoji: '🏯', name: 'Rajasthan', desc: 'Forts, palaces & desert', days: '4-5 days', color: 'bg-orange-100' },
     { emoji: '🌊', name: 'Goa', desc: 'Beaches, food & nightlife', days: '3-4 days', color: 'bg-blue-100' },
@@ -71,16 +76,22 @@ function DestinationCards() {
   return (
     <div className="py-16 px-8 bg-gray-50">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">Popular Destinations 🇮🇳</h2>
-      <p className="text-center text-gray-500 mb-10">Explore the most loved places across India</p>
+      <p className="text-center text-gray-500 mb-10">Click any destination to instantly generate an itinerary!</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {destinations.map((dest) => (
-          <div key={dest.name} className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl transition-shadow">
+          <div
+            key={dest.name}
+            onClick={() => onCardClick(dest.name)}
+            className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-xl hover:scale-105 transition-all"
+          >
             <div className={`${dest.color} rounded-xl p-4 text-5xl text-center mb-4`}>{dest.emoji}</div>
             <h3 className="text-xl font-bold text-gray-800 mb-1">{dest.name}</h3>
             <p className="text-gray-500 text-sm mb-3">{dest.desc}</p>
             <div className="flex justify-between items-center">
               <span className="text-blue-600 font-medium text-sm">📅 {dest.days}</span>
-              <button className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-700">Plan Trip</button>
+              <button className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-700">
+                Plan Trip ✨
+              </button>
             </div>
           </div>
         ))}
@@ -165,42 +176,41 @@ function Footer() {
     </div>
   );
 }
-
 function App() {
   const [itinerary, setItinerary] = useState('');
   const [loading, setLoading] = useState(false);
 
   const generateItinerary = async (destination, days) => {
-    if (!destination) {
-      alert('Please enter a destination!');
-      return;
+  if (!destination) {
+    alert('Please enter a destination!');
+    return;
+  }
+  setLoading(true);
+  setItinerary('');
+  window.scrollTo({ top: 400, behavior: 'smooth' });
+  try {
+    const response = await fetch('http://localhost:5000/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ destination, days }),
+    });
+    const data = await response.json();
+    if (data.error) {
+      alert('Something went wrong! ' + data.error);
+    } else {
+      setItinerary(data.itinerary);
     }
-    setLoading(true);
-    setItinerary('');
-    try {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const prompt = `
-       Create a ${days}-day itinerary for ${destination}, India.
-       For each day provide:
-        Day Number
-        Morning Activity
-        Afternoon Activity
-        Evening Activity
-        Food Recommendation
-        Travel Tip
+  } catch (error) {
+    alert('Something went wrong! ' + error.message);
+    console.error(error);
+  }
+  setLoading(false);
+};
 
-Keep each point under 30 words.
-`;
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      setItinerary(text);
-    } catch (error) {
-      alert('Something went wrong! ' + error.message);
-      console.error(error);
-    }
-    setLoading(false);
+  const handleCardClick = (destinationName) => {
+    generateItinerary(destinationName, '3');
   };
 
   return (
@@ -208,10 +218,12 @@ Keep each point under 30 words.
       <Navbar />
       <Hero onGenerate={generateItinerary} />
       <Itinerary itinerary={itinerary} loading={loading} />
-      <DestinationCards />
+      <DestinationCards onCardClick={handleCardClick} />
       <Footer />
+      <Login />
     </div>
   );
 }
+
 
 export default App;
