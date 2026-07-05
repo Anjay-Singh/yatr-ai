@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth, provider, db } from './firebase';
-import { signInWithPopup, signOut } from 'firebase/auth';
+import { signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 
 function Navbar({ user, onLogin, onLogout, onShowTrips }) {
@@ -26,8 +26,7 @@ function Navbar({ user, onLogin, onLogout, onShowTrips }) {
         </div>
       ) : (
         <button onClick={onLogin} className="bg-white text-blue-600 px-6 py-2 rounded-full hover:bg-blue-100 flex items-center gap-2">
-          <img src="https://www.google.com/favicon.ico" alt="google" className="w-4 h-4" />
-          Login with Google
+        Login
         </button>
       )}
     </nav>
@@ -209,6 +208,84 @@ function Footer() {
   );
 }
 
+function LoginPage({ onLogin, onGoogleLogin, onSwitch, isSignup }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-600 to-blue-400 flex items-center justify-center px-4">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+        
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="text-4xl font-bold text-blue-600 mb-2">🗺️ YatrAI</div>
+          <p className="text-gray-500">{isSignup ? 'Create your account' : 'Welcome back!'}</p>
+        </div>
+
+        {/* Email Input */}
+        <div className="mb-4">
+          <label className="block text-gray-700 font-medium mb-2">Email</label>
+          <input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-gray-300 outline-none focus:border-blue-500 text-gray-800"
+          />
+        </div>
+
+        {/* Password Input */}
+        <div className="mb-6">
+          <label className="block text-gray-700 font-medium mb-2">Password</label>
+          <input
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-gray-300 outline-none focus:border-blue-500 text-gray-800"
+          />
+        </div>
+
+        {/* Login/Signup Button */}
+        <button
+          onClick={() => onLogin(email, password)}
+          className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 mb-4"
+        >
+          {isSignup ? 'Create Account' : 'Login'}
+        </button>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <span className="text-gray-400 text-sm">or</span>
+          <div className="flex-1 h-px bg-gray-200"></div>
+        </div>
+
+        {/* Google Login */}
+        <button
+          onClick={onGoogleLogin}
+          className="w-full border border-gray-300 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-50 flex items-center justify-center gap-2 mb-6"
+        >
+          <img src="https://www.google.com/favicon.ico" alt="google" className="w-5 h-5" />
+          Continue with Google
+        </button>
+
+        {/* Switch between Login and Signup */}
+        <p className="text-center text-gray-500 text-sm">
+          {isSignup ? 'Already have an account?' : "Don't have an account?"}
+          <span
+            onClick={onSwitch}
+            className="text-blue-600 font-medium cursor-pointer ml-1"
+          >
+            {isSignup ? 'Login' : 'Sign Up'}
+          </span>
+        </p>
+
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [itinerary, setItinerary] = useState('');
   const [loading, setLoading] = useState(false);
@@ -216,6 +293,8 @@ function App() {
   const [savedTrips, setSavedTrips] = useState([]);
   const [showTrips, setShowTrips] = useState(false);
   const [lastDestination, setLastDestination] = useState('');
+  const [showLoginPage, setShowLoginPage] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
 
   useEffect(() => {
     auth.onAuthStateChanged((u) => setUser(u));
@@ -229,10 +308,32 @@ function App() {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    setShowTrips(false);
-  };
+ const handleLogout = async () => {
+  await signOut(auth);
+  setShowTrips(false);
+  setShowLoginPage(false);
+};
+  const handleEmailLogin = async (email, password) => {
+  try {
+    if (isSignup) {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+    }
+    setShowLoginPage(false);
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+};
+
+const handleGoogleLogin = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+    setShowLoginPage(false);
+  } catch (error) {
+    alert('Login failed! ' + error.message);
+  }
+};
 
   const saveTrip = async () => {
     if (!user) {
@@ -293,14 +394,25 @@ function App() {
     generateItinerary(destinationName, '3');
   };
 
+  if (showLoginPage && !user) {
+  return (
+    <LoginPage
+      onLogin={handleEmailLogin}
+      onGoogleLogin={handleGoogleLogin}
+      onSwitch={() => setIsSignup(!isSignup)}
+      isSignup={isSignup}
+    />
+  );
+}
+
   return (
     <div>
-      <Navbar
-        user={user}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-        onShowTrips={loadSavedTrips}
-      />
+     <Navbar
+     user={user}
+    onLogin={() => setShowLoginPage(true)}
+    onLogout={handleLogout}
+    onShowTrips={loadSavedTrips}
+     />
       <Hero onGenerate={generateItinerary} />
       {showTrips && (
         <div className="py-16 px-8 bg-white max-w-4xl mx-auto">
