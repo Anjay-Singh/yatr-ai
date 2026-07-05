@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { auth, provider, db } from './firebase';
 import { signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import L from 'leaflet';
+
+const DefaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
 
 function Navbar({ user, onLogin, onLogout, onShowTrips }) {
   return (
@@ -286,6 +298,57 @@ function LoginPage({ onLogin, onGoogleLogin, onSwitch, isSignup }) {
   );
 }
 
+function TripMap({ destination }) {
+  const [coords, setCoords] = useState([20.5937, 78.9629]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!destination) return;
+    setLoading(true);
+    fetch(`https://nominatim.openstreetmap.org/search?q=${destination},India&format=json&limit=1`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [destination]);
+
+  if (loading) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-gray-500">Loading map...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-8 px-8 bg-white">
+      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+        📍 {destination} on Map
+      </h2>
+      <div className="max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-lg" style={{ height: '400px' }}>
+        <MapContainer
+          key={coords.toString()}
+          center={coords}
+          zoom={11}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; OpenStreetMap contributors'
+          />
+          <Marker position={coords}>
+            <Popup>{destination} — Your next adventure!</Popup>
+          </Marker>
+        </MapContainer>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [itinerary, setItinerary] = useState('');
   const [loading, setLoading] = useState(false);
@@ -442,7 +505,10 @@ const handleGoogleLogin = async () => {
         loading={loading}
         onSave={saveTrip}
         user={user}
-      />
+       />
+
+        {itinerary && <TripMap destination={lastDestination} />}
+
       <DestinationCards onCardClick={handleCardClick} />
       <Footer />
     </div>
