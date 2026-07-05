@@ -3,9 +3,6 @@ import { auth, provider, db } from './firebase';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 
-
-
-
 function Navbar({ user, onLogin, onLogout, onShowTrips }) {
   return (
     <nav className="flex justify-between items-center px-8 py-4 bg-blue-600 shadow-md">
@@ -14,31 +11,21 @@ function Navbar({ user, onLogin, onLogout, onShowTrips }) {
         <span className="cursor-pointer hover:text-blue-200">Home</span>
         <span className="cursor-pointer hover:text-blue-200">Explore</span>
         {user && (
-          <span
-            onClick={onShowTrips}
-            className="cursor-pointer hover:text-blue-200">
+          <span onClick={onShowTrips} className="cursor-pointer hover:text-blue-200">
             My Trips
           </span>
         )}
       </div>
       {user ? (
         <div className="flex items-center gap-4">
-          <img
-            src={user.photoURL}
-            alt="profile"
-            className="w-8 h-8 rounded-full"
-          />
+          <img src={user.photoURL} alt="profile" className="w-8 h-8 rounded-full" />
           <span className="text-white text-sm">{user.displayName}</span>
-          <button
-            onClick={onLogout}
-            className="bg-white text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 text-sm">
+          <button onClick={onLogout} className="bg-white text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 text-sm">
             Logout
           </button>
         </div>
       ) : (
-        <button
-          onClick={onLogin}
-          className="bg-white text-blue-600 px-6 py-2 rounded-full hover:bg-blue-100 flex items-center gap-2">
+        <button onClick={onLogin} className="bg-white text-blue-600 px-6 py-2 rounded-full hover:bg-blue-100 flex items-center gap-2">
           <img src="https://www.google.com/favicon.ico" alt="google" className="w-4 h-4" />
           Login with Google
         </button>
@@ -50,9 +37,15 @@ function Navbar({ user, onLogin, onLogout, onShowTrips }) {
 function Hero({ onGenerate }) {
   const [destination, setDestination] = useState('');
   const [days, setDays] = useState('3');
+
+  const handlePillClick = (name) => {
+    setDestination(name);
+    onGenerate(name, days);
+  };
+
   return (
     <div className="bg-gradient-to-b from-blue-600 to-blue-400 text-white py-20 px-8 text-center">
-      <h1 className="text-5xl font-bold mb-4">🇮🇳 Plan Your Perfect India Trip</h1>
+      <h1 className="text-5xl font-bold mb-4">Plan Your Perfect India Trip</h1>
       <p className="text-xl mb-10 text-blue-100">Enter a destination and let AI build your day by day itinerary</p>
       <div className="flex justify-center gap-4 max-w-2xl mx-auto">
         <input
@@ -67,26 +60,35 @@ function Hero({ onGenerate }) {
           onChange={(e) => setDays(e.target.value)}
           className="px-4 py-4 rounded-full text-gray-800 text-lg outline-none"
         >
-          <option value="1">1 Days</option>
+          <option value="1">1 Day</option>
           <option value="2">2 Days</option>
           <option value="3">3 Days</option>
           <option value="4">4 Days</option>
           <option value="5">5 Days</option>
-          <option value="6">6 Days</option>
         </select>
         <button
           onClick={() => onGenerate(destination, days)}
           className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full text-lg font-bold"
         >
-          Generate 🚀
+          Generate
         </button>
       </div>
       <div className="mt-8 flex justify-center gap-4 flex-wrap">
-        <span className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-30">🏯 Rajasthan</span>
-        <span className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-30">🌊 Goa</span>
-        <span className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-30">🏔️ Manali</span>
-        <span className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-30">🛕 Kerala</span>
-        <span className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-30">🕌 Delhi</span>
+        {[
+          { emoji: '🏯', name: 'Rajasthan' },
+          { emoji: '🌊', name: 'Goa' },
+          { emoji: '🏔️', name: 'Manali' },
+          { emoji: '🛕', name: 'Kerala' },
+          { emoji: '🕌', name: 'Delhi' },
+        ].map((place) => (
+          <span
+            key={place.name}
+            onClick={() => handlePillClick(place.name)}
+            className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-40"
+          >
+            {place.emoji} {place.name}
+          </span>
+        ))}
       </div>
     </div>
   );
@@ -103,7 +105,7 @@ function DestinationCards({ onCardClick }) {
   ];
   return (
     <div className="py-16 px-8 bg-gray-50">
-      <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">Popular Destinations 🇮🇳</h2>
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">Popular Destinations</h2>
       <p className="text-center text-gray-500 mb-10">Click any destination to instantly generate an itinerary!</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {destinations.map((dest) => (
@@ -118,7 +120,7 @@ function DestinationCards({ onCardClick }) {
             <div className="flex justify-between items-center">
               <span className="text-blue-600 font-medium text-sm">📅 {dest.days}</span>
               <button className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm hover:bg-blue-700">
-                Plan Trip ✨
+                Plan Trip
               </button>
             </div>
           </div>
@@ -128,7 +130,7 @@ function DestinationCards({ onCardClick }) {
   );
 }
 
-function Itinerary({ itinerary, loading , onSave , user }) {
+function Itinerary({ itinerary, loading, onSave, user }) {
   if (loading) {
     return (
       <div className="py-20 text-center">
@@ -138,23 +140,20 @@ function Itinerary({ itinerary, loading , onSave , user }) {
       </div>
     );
   }
-
   if (!itinerary) return null;
-
   const lines = itinerary.split('\n');
-
   return (
     <div className="py-16 px-8 bg-gray-50">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
-        🗺️ Your AI Generated Itinerary
+        Your AI Generated Itinerary
       </h2>
       <div className="max-w-4xl mx-auto">
         {lines.map((line, index) => {
           if (line.startsWith('## ')) {
             return <h2 key={index} className="text-2xl font-bold text-blue-600 mt-8 mb-4">{line.replace('## ', '')}</h2>;
-          } if (line.startsWith('#### ')) {
-           return <p key={index} className="font-semibold text-gray-700 mt-4 mb-2">{line.replace('#### ', '')}</p>;
-           } else if (line.startsWith('### ')) {
+          } else if (line.startsWith('#### ')) {
+            return <p key={index} className="font-semibold text-gray-700 mt-4 mb-2">{line.replace('#### ', '')}</p>;
+          } else if (line.startsWith('### ')) {
             return <h3 key={index} className="text-xl font-bold text-gray-800 mt-6 mb-3 border-l-4 border-blue-500 pl-4">{line.replace('### ', '')}</h3>;
           } else if (line.startsWith('**')) {
             return <p key={index} className="font-bold text-gray-800 mt-4 mb-2">{line.replace(/\*\*/g, '')}</p>;
@@ -173,46 +172,43 @@ function Itinerary({ itinerary, loading , onSave , user }) {
             return <p key={index} className="text-gray-600 mb-2">{line}</p>;
           }
         })}
-
-        {/* Export Button */}
-        {/* Buttons */}
-<div className="text-center mt-10 flex justify-center gap-4">
-  <button
-    onClick={() => window.print()}
-    className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-blue-700"
-  >
-    🖨️ Print / Save as PDF
-  </button>
-  {user && (
-    <button
-      onClick={onSave}
-      className="bg-green-500 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-green-600"
-    >
-      💾 Save Trip
-    </button>
-  )}
-</div>
+        <div className="text-center mt-10 flex justify-center gap-4">
+          <button
+            onClick={() => window.print()}
+            className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-blue-700"
+          >
+            Print / Save as PDF
+          </button>
+          {user && (
+            <button
+              onClick={onSave}
+              className="bg-green-500 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-green-600"
+            >
+              Save Trip
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-
 function Footer() {
   return (
     <div className="bg-blue-600 text-white py-10 px-8 text-center">
       <div className="text-3xl font-bold mb-2">🗺️ YatrAI</div>
-      <p className="text-blue-100 mb-4">Made with ❤️ for India</p>
+      <p className="text-blue-100 mb-4">Made with love for India</p>
       <div className="flex justify-center gap-8 text-blue-200 mb-6">
         <span className="cursor-pointer hover:text-white">Home</span>
         <span className="cursor-pointer hover:text-white">Explore</span>
         <span className="cursor-pointer hover:text-white">My Trips</span>
         <span className="cursor-pointer hover:text-white">Contact</span>
       </div>
-      <p className="text-blue-300 text-sm">© 2024 YatrAI. All rights reserved.</p>
+      <p className="text-blue-300 text-sm">2024 YatrAI. All rights reserved.</p>
     </div>
   );
 }
+
 function App() {
   const [itinerary, setItinerary] = useState('');
   const [loading, setLoading] = useState(false);
@@ -250,7 +246,7 @@ function App() {
         itinerary: itinerary,
         createdAt: new Date()
       });
-      alert('Trip saved successfully! ✅');
+      alert('Trip saved successfully!');
     } catch (error) {
       alert('Failed to save trip! ' + error.message);
     }
@@ -306,11 +302,10 @@ function App() {
         onShowTrips={loadSavedTrips}
       />
       <Hero onGenerate={generateItinerary} />
-
       {showTrips && (
         <div className="py-16 px-8 bg-white max-w-4xl mx-auto">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-10">
-            🗺️ My Saved Trips
+            My Saved Trips
           </h2>
           {savedTrips.length === 0 ? (
             <p className="text-center text-gray-500">No saved trips yet!</p>
@@ -330,7 +325,6 @@ function App() {
           )}
         </div>
       )}
-
       <Itinerary
         itinerary={itinerary}
         loading={loading}
@@ -342,6 +336,5 @@ function App() {
     </div>
   );
 }
-
 
 export default App;
