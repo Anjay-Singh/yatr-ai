@@ -363,13 +363,13 @@ function App() {
     auth.onAuthStateChanged((u) => setUser(u));
   }, []);
 
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      alert('Login failed! ' + error.message);
-    }
-  };
+ // const handleLogin = async () => {
+   // try {
+     // await signInWithPopup(auth, provider);
+    //} catch (error) {
+     // alert('Login failed! ' + error.message);
+    //}
+  //};
 
  const handleLogout = async () => {
   await signOut(auth);
