@@ -16,30 +16,65 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 function Navbar({ user, onLogin, onLogout, onShowTrips }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <nav className="flex justify-between items-center px-8 py-4 bg-blue-600 shadow-md">
-      <div className="text-2xl font-bold text-white">🗺️ YatrAI</div>
-      <div className="flex gap-8 text-white font-medium">
-        <span className="cursor-pointer hover:text-blue-200">Home</span>
-        <span className="cursor-pointer hover:text-blue-200">Explore</span>
-        {user && (
-          <span onClick={onShowTrips} className="cursor-pointer hover:text-blue-200">
-            My Trips
-          </span>
+    <nav className="bg-blue-600 shadow-md">
+      <div className="flex justify-between items-center px-4 py-4">
+        <div className="text-xl font-bold text-white">🗺️ YatrAI</div>
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="text-white md:hidden text-2xl"
+        >
+          {menuOpen ? '✕' : '☰'}
+        </button>
+        <div className="hidden md:flex gap-8 text-white font-medium">
+          <span className="cursor-pointer hover:text-blue-200">Home</span>
+          <span className="cursor-pointer hover:text-blue-200">Explore</span>
+          {user && (
+            <span onClick={onShowTrips} className="cursor-pointer hover:text-blue-200">
+              My Trips
+            </span>
+          )}
+        </div>
+        {user ? (
+          <div className="hidden md:flex items-center gap-4">
+            <img src={user.photoURL} alt="profile" className="w-8 h-8 rounded-full" />
+            <span className="text-white text-sm">{user.displayName}</span>
+            <button onClick={onLogout} className="bg-white text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 text-sm">
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button onClick={onLogin} className="hidden md:flex bg-white text-blue-600 px-6 py-2 rounded-full hover:bg-blue-100 items-center gap-2">
+            Login
+          </button>
         )}
       </div>
-      {user ? (
-        <div className="flex items-center gap-4">
-          <img src={user.photoURL} alt="profile" className="w-8 h-8 rounded-full" />
-          <span className="text-white text-sm">{user.displayName}</span>
-          <button onClick={onLogout} className="bg-white text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 text-sm">
-            Logout
-          </button>
+
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div className="md:hidden bg-blue-700 px-4 py-4 flex flex-col gap-4">
+          <span className="text-white cursor-pointer hover:text-blue-200">Home</span>
+          <span className="text-white cursor-pointer hover:text-blue-200">Explore</span>
+          {user && (
+            <span onClick={() => { onShowTrips(); setMenuOpen(false); }} className="text-white cursor-pointer hover:text-blue-200">
+              My Trips
+            </span>
+          )}
+          {user ? (
+            <div className="flex items-center gap-4">
+              <img src={user.photoURL} alt="profile" className="w-8 h-8 rounded-full" />
+              <span className="text-white text-sm">{user.displayName}</span>
+              <button onClick={onLogout} className="bg-white text-blue-600 px-4 py-2 rounded-full text-sm">
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => { onLogin(); setMenuOpen(false); }} className="bg-white text-blue-600 px-6 py-2 rounded-full w-full">
+              Login
+            </button>
+          )}
         </div>
-      ) : (
-        <button onClick={onLogin} className="bg-white text-blue-600 px-6 py-2 rounded-full hover:bg-blue-100 flex items-center gap-2">
-        Login
-        </button>
       )}
     </nav>
   );
@@ -55,54 +90,54 @@ function Hero({ onGenerate }) {
   };
 
   return (
-    <div className="bg-gradient-to-b from-blue-600 to-blue-400 text-white py-20 px-8 text-center">
-      <h1 className="text-5xl font-bold mb-4">Plan Your Perfect India Trip</h1>
-      <p className="text-xl mb-10 text-blue-100">Enter a destination and let AI build your day by day itinerary</p>
-      <div className="flex justify-center gap-4 max-w-2xl mx-auto">
-        <input
-          type="text"
-          placeholder="Where do you want to go? e.g. Goa, Rajasthan..."
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          className="flex-1 px-6 py-4 rounded-full text-gray-800 text-lg outline-none"
-        />
-        <select
-          value={days}
-          onChange={(e) => setDays(e.target.value)}
-          className="px-4 py-4 rounded-full text-gray-800 text-lg outline-none"
-        >
-          <option value="1">1 Day</option>
-          <option value="2">2 Days</option>
-          <option value="3">3 Days</option>
-          <option value="4">4 Days</option>
-          <option value="5">5 Days</option>
-        </select>
-        <button
-          onClick={() => onGenerate(destination, days)}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full text-lg font-bold"
-        >
-          Generate
-        </button>
-      </div>
-      <div className="mt-8 flex justify-center gap-4 flex-wrap">
-        {[
-          { emoji: '🏯', name: 'Rajasthan' },
-          { emoji: '🌊', name: 'Goa' },
-          { emoji: '🏔️', name: 'Manali' },
-          { emoji: '🛕', name: 'Kerala' },
-          { emoji: '🕌', name: 'Delhi' },
-        ].map((place) => (
-          <span
-            key={place.name}
-            onClick={() => handlePillClick(place.name)}
-            className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-40"
-          >
-            {place.emoji} {place.name}
-          </span>
-        ))}
-      </div>
+  <div className="bg-gradient-to-b from-blue-600 to-blue-400 text-white py-16 px-4 text-center">
+    <h1 className="text-3xl md:text-5xl font-bold mb-4">Plan Your Perfect India Trip</h1>
+    <p className="text-lg md:text-xl mb-10 text-blue-100">Enter a destination and let AI build your itinerary</p>
+    <div className="flex flex-col md:flex-row justify-center gap-3 max-w-2xl mx-auto">
+      <input
+        type="text"
+        placeholder="Where do you want to go? e.g. Goa..."
+        value={destination}
+        onChange={(e) => setDestination(e.target.value)}
+        className="flex-1 px-6 py-4 rounded-full text-gray-800 text-lg outline-none"
+      />
+      <select
+        value={days}
+        onChange={(e) => setDays(e.target.value)}
+        className="px-4 py-4 rounded-full text-gray-800 text-lg outline-none"
+      >
+        <option value="1">1 Day</option>
+        <option value="2">2 Days</option>
+        <option value="3">3 Days</option>
+        <option value="4">4 Days</option>
+        <option value="5">5 Days</option>
+      </select>
+      <button
+        onClick={() => onGenerate(destination, days)}
+        className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full text-lg font-bold"
+      >
+        Generate
+      </button>
     </div>
-  );
+    <div className="mt-8 flex justify-center gap-3 flex-wrap">
+      {[
+        { emoji: '🏯', name: 'Rajasthan' },
+        { emoji: '🌊', name: 'Goa' },
+        { emoji: '🏔️', name: 'Manali' },
+        { emoji: '🛕', name: 'Kerala' },
+        { emoji: '🕌', name: 'Delhi' },
+      ].map((place) => (
+        <span
+          key={place.name}
+          onClick={() => handlePillClick(place.name)}
+          className="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-opacity-40"
+        >
+          {place.emoji} {place.name}
+        </span>
+      ))}
+    </div>
+  </div>
+);
 }
 
 function DestinationCards({ onCardClick }) {
@@ -183,7 +218,7 @@ function Itinerary({ itinerary, loading, onSave, user }) {
             return <p key={index} className="text-gray-600 mb-2">{line}</p>;
           }
         })}
-        <div className="text-center mt-10 flex justify-center gap-4">
+          <div className="text-center mt-10 flex flex-col md:flex-row justify-center gap-4">
           <button
             onClick={() => window.print()}
             className="bg-blue-600 text-white px-8 py-3 rounded-full text-lg font-bold hover:bg-blue-700"
