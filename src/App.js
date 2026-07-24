@@ -28,14 +28,20 @@ function Navbar({ user, onLogin, onLogout, onShowTrips }) {
           {menuOpen ? '✕' : '☰'}
         </button>
         <div className="hidden md:flex gap-8 text-white font-medium">
-          <span className="cursor-pointer hover:text-blue-200">Home</span>
-          <span className="cursor-pointer hover:text-blue-200">Explore</span>
-          {user && (
-            <span onClick={onShowTrips} className="cursor-pointer hover:text-blue-200">
-              My Trips
-            </span>
-          )}
-        </div>
+  <span
+    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    className="cursor-pointer hover:text-blue-200">
+    Home
+  </span>
+  <span
+    onClick={() => document.getElementById('destinations').scrollIntoView({ behavior: 'smooth' })}
+    className="cursor-pointer hover:text-blue-200">
+    Explore
+  </span>
+  {user && (
+    <span onClick={onShowTrips} className="cursor-pointer hover:text-blue-200">My Trips</span>
+  )}
+         </div>
         {user ? (
           <div className="hidden md:flex items-center gap-4">
             <img src={user.photoURL} alt="profile" className="w-8 h-8 rounded-full" />
@@ -54,8 +60,16 @@ function Navbar({ user, onLogin, onLogout, onShowTrips }) {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-blue-700 px-4 py-4 flex flex-col gap-4">
-          <span className="text-white cursor-pointer hover:text-blue-200">Home</span>
-          <span className="text-white cursor-pointer hover:text-blue-200">Explore</span>
+          <span
+        onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setMenuOpen(false); }}
+        className="text-white cursor-pointer hover:text-blue-200">
+         Home
+        </span>
+          <span
+           onClick={() => { document.getElementById('destinations').scrollIntoView({ behavior: 'smooth' }); setMenuOpen(false); }}
+            className="text-white cursor-pointer hover:text-blue-200">
+             Explore
+        </span>
           {user && (
             <span onClick={() => { onShowTrips(); setMenuOpen(false); }} className="text-white cursor-pointer hover:text-blue-200">
               My Trips
@@ -150,7 +164,7 @@ function DestinationCards({ onCardClick }) {
     { emoji: '🌅', name: 'Varanasi', desc: 'Spirituality & culture', days: '2-3 days', color: 'bg-yellow-100' },
   ];
   return (
-    <div className="py-16 px-8 bg-gray-50">
+    <div id="destinations"  className="py-16 px-8 bg-gray-50">
       <h2 className="text-3xl font-bold text-center text-gray-800 mb-4">Popular Destinations</h2>
       <p className="text-center text-gray-500 mb-10">Click any destination to instantly generate an itinerary!</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
