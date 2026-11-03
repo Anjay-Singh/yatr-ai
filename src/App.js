@@ -115,17 +115,15 @@ function Hero({ onGenerate }) {
         onChange={(e) => setDestination(e.target.value)}
         className="flex-1 px-6 py-4 rounded-full text-gray-800 text-lg outline-none"
       />
-      <select
-        value={days}
-        onChange={(e) => setDays(e.target.value)}
-        className="px-4 py-4 rounded-full text-gray-800 text-lg outline-none"
-      >
-        <option value="1">1 Day</option>
-        <option value="2">2 Days</option>
-        <option value="3">3 Days</option>
-        <option value="4">4 Days</option>
-        <option value="5">5 Days</option>
-      </select>
+      <input
+     type="number"
+     min="1"
+     max="30"
+     value={days}
+     onChange={(e) => setDays(e.target.value)}
+     placeholder="Days"
+     className="w-28 px-4 py-4 rounded-full text-gray-800 text-lg outline-none text-center"
+     />
       <button
         onClick={() => onGenerate(destination, days)}
         className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full text-lg font-bold"
